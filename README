@@ -1,4 +1,4 @@
-This is just a simple attempt to create Conway's Game of Life in Python.
+This is just a simple attempt to implement Conway's Game of Life in Python.
 
 The tables are stored using numpy and for the graphics pygame is needed.
 
