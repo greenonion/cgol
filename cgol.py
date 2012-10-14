@@ -6,10 +6,10 @@ import random
 import numpy as np
 
 #** GLOBAL SETTINGS **
-version = "1.01"
+version = "1.02"
 bottom_border = 20
 # Framerate of the Game
-framerate = 240
+framerate = 18.2
 # Cell dimensions
 cell_dim = (5, 5)
 # Colours
@@ -33,6 +33,8 @@ def main(args):
     grid = init(cells, density)
     # Initialize the graphics
     screen, bg, clock, font, textpos, screen_size = graph_init(cells)
+    # Draw initial grid
+    draw_grid(grid, bg)
 
     running = True
     generation = 0
@@ -41,14 +43,11 @@ def main(args):
         # Slow down
         clock.tick(framerate)
 
-        # Draw current generation
-        draw_grid(grid, bg)
+        # Compute and draw next generation
+        grid = update_grid(grid, bg)
         update_text(generation, textpos, bg, font, screen_size)
         screen.blit(bg, (0, 0))
         pygame.display.flip()
-
-        # Compute next generation
-        grid = update_grid(grid)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -98,7 +97,7 @@ def init(cells, density):
     return grid
 
 # Update grid by applying game of life rules
-def update_grid(grid):
+def update_grid(grid, bg):
     dims = grid.shape
     next_grid = np.zeros(dims)
     for index, x in np.ndenumerate(grid):
@@ -109,6 +108,7 @@ def update_grid(grid):
             # living neighours dies
             if (neighbours < 2 or neighbours > 3):
                 next_grid[index] = 0
+                draw_cell(grid, bg, index, black)
             else:
                 next_grid[index] = 1
         # Any dead cell        
@@ -116,6 +116,7 @@ def update_grid(grid):
             # with three live neigbours becomes live
             if (neighbours == 3):
                 next_grid[index] = 1
+                draw_cell(grid, bg, index, snow)
 
     return next_grid
 
@@ -158,5 +159,9 @@ def draw_grid(grid, bg):
         elif x == 0:
             pygame.draw.rect(bg, black, (index[1]*cell_dim[1],
                  index[0]*cell_dim[0], cell_dim[0], cell_dim[1]))
+
+# Draw a single cell            
+def draw_cell(grid, bg, pos, colour):
+    pygame.draw.rect(bg, colour, (pos[1]*cell_dim[1], pos[0]*cell_dim[0], cell_dim[0], cell_dim[1]))
 
 if __name__ == "__main__": main(sys.argv)
