@@ -6,7 +6,7 @@ import random
 import numpy as np
 
 #** GLOBAL SETTINGS **
-version = "1.02"
+version = "1.10"
 bottom_border = 20
 # Framerate of the Game
 framerate = 18.2
