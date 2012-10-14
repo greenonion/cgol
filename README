@@ -10,4 +10,4 @@ where cells_x and cells_y are the number of cells in the x and y axis respective
 
 Some tips on the usage of pygame were found in http://www.daniweb.com/software-development/python/code/217028/the-game-of-life 
 
-This is the first working version, hopefully more work will be done, mainly dealing with performance issues and allowing larger worlds.
+**Version 1.10: Updated code so that cells are redrawn only if needed
