@@ -6,11 +6,12 @@ import random
 import numpy as np
 
 #** GLOBAL SETTINGS **
+version = "1.01"
+bottom_border = 20
 # Framerate of the Game
 framerate = 240
 # Cell dimensions
 cell_dim = (5, 5)
-# Initial probability
 # Colours
 snow = (255, 250, 250)
 black = (0, 0, 0)
@@ -21,7 +22,7 @@ def main(args):
         print "USAGE: cgol.py cells_x cells_y density"
         exit(0)
     if (float(args[3]) > 1 or float(args[3]) < 0):
-        print "density must be between 0 and 1"
+        print "ERROR: Density must be between 0 and 1"
         exit(0)
     else:
         cells = (int(args[2]), int(args[1]))
@@ -31,9 +32,10 @@ def main(args):
     # Initialize the grid
     grid = init(cells, density)
     # Initialize the graphics
-    screen, bg, clock = graph_init(cells)
+    screen, bg, clock, font, textpos, screen_size = graph_init(cells)
 
     running = True
+    generation = 0
     
     while running:
         # Slow down
@@ -41,6 +43,7 @@ def main(args):
 
         # Draw current generation
         draw_grid(grid, bg)
+        update_text(generation, textpos, bg, font, screen_size)
         screen.blit(bg, (0, 0))
         pygame.display.flip()
 
@@ -51,17 +54,37 @@ def main(args):
             if event.type == pygame.QUIT:
                 running = False
 
+        generation += 1
+
 
 def graph_init(cells):
     # Initialize screen and clock
     width = cells[1] * cell_dim[1]
     height = cells[0] * cell_dim[0]
 
-    screen = pygame.display.set_mode((width, height))
+    pygame.init()
+    screen = pygame.display.set_mode((width, height + bottom_border))
+    pygame.display.set_caption("Conway's Game of Life " + "v. "+ version)
+
     bg = screen.convert()
     clock = pygame.time.Clock()
+
+    font = pygame.font.SysFont("arial", 15)
+    text = font.render("Generation 1", True, snow)
+    textpos = text.get_rect()
+    textpos.centerx = (width/2)
+    textpos.centery = (height + bottom_border/2)
+    bg.blit(text, textpos)
+    screen_size = (width, height)
     
-    return screen, bg, clock
+    return screen, bg, clock, font, textpos, screen_size
+
+def update_text(gen, textpos, bg, font, screen_size):
+    # Delete previous text
+    pygame.draw.rect(bg, black, (0, screen_size[1], screen_size[0], bottom_border))
+    # Draw new text
+    text = font.render("Generation " + str(gen), True, snow)
+    bg.blit(text, textpos)
 
 # Initialize grid
 def init(cells, density):
