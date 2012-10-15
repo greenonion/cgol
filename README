@@ -13,5 +13,6 @@ Currently in the process of implementing the various optimizations proposed in M
 Some tips on the usage of pygame were found in http://www.daniweb.com/software-development/python/code/217028/the-game-of-life 
 
 ** LOG **
-** In the process of converting the program to use bits to store the cells.
-** Version 1.10: Updated code so that cells are redrawn only if needed
+** Version 2.00: Updated code so bits are used for cell representation.
+** Version 1.10: Updated code so that cells are redrawn only if needed.
+** Version 1.00: First working version, using numpy.

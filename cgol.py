@@ -6,8 +6,6 @@ import random
 import array
 
 #** GLOBAL SETTINGS **
-# Trying to use bit representation
-# using python array module
 version = "2.00"
 bottom_border = 20
 # Framerate of the Game
@@ -22,19 +20,16 @@ class Grid:
     """The class for the cellgrid"""
     
     # Initialize grid
-    def __init__(self, cells, density):
+    def __init__(self, cells):
         # Store width and height dimensions
         self.width = cells[0]
         self.height = cells[1]
-        self.density = density
         # Each byte stores 8 bits, so every cell will represent 8 squares
         self.width_in_bytes = cells[0]/8
         # Total length of the array
         self.length_in_bytes = self.width_in_bytes * self.height
         # Initialize array with zeroes
         self.cellmap = array.array('B', [0]*self.length_in_bytes) 
-        # Randomize array
-        self.randomize()
         
     # Set cell value to 1
     def set_cell(self, width, height):
@@ -67,10 +62,10 @@ class Grid:
             return False
 
     # Randomize grid to get unique starting generation
-    def randomize(self):
+    def randomize(self, density):
         for i in xrange(self.width):
             for j in xrange(self.height):
-                if random.uniform(0, 1) < self.density:
+                if random.uniform(0, 1) < density:
                     self.set_cell(i, j)
 
     # Get live neighbour cells
@@ -94,26 +89,25 @@ class Grid:
         return total 
 
     # Update grid by applying game of life rules
-    def update_grid(grid, bg):
-        dims = grid.shape
-        next_grid = np.zeros(dims)
-        for index, x in np.ndenumerate(grid):
-            neighbours = count_live_neighbours(grid, index)
-            # Any live cell 
-            if (x == 1):
-                # with fewer than two or more than three
-                # living neighours dies
-                if (neighbours < 2 or neighbours > 3):
-                    next_grid[index] = 0
-                    draw_cell(grid, bg, index, black)
-                else:
-                    next_grid[index] = 1
-            # Any dead cell        
-            else:        
-                # with three live neigbours becomes live
-                if (neighbours == 3):
-                    next_grid[index] = 1
-                    draw_cell(grid, bg, index, snow)
+    def update_grid(self, bg):
+        next_grid = Grid((self.width, self.height))
+        for i in xrange(self.width):
+            for j in xrange(self.height):
+                neighbours = self.count_live_neighbours(i, j)
+                # Any live cell 
+                if (self.check_set(i, j)):
+                    # with fewer than two or more than three
+                    # living neighours dies
+                    if (neighbours < 2 or neighbours > 3):
+                        draw_cell(self, bg, (i, j), black)
+                    else:
+                        next_grid.set_cell(i, j)
+                # Any dead cell        
+                else:        
+                    # with three live neigbours becomes live
+                    if (neighbours == 3):
+                        next_grid.set_cell(i, j)
+                        draw_cell(self, bg, (i, j), snow)
 
         return next_grid
 
@@ -136,8 +130,9 @@ def main(args):
         
 
     # Initialize the grid
-    #grid = grid_init(cells, density)
-    grid = Grid(cells, density)
+    grid = Grid(cells)
+    # Randomize the grid
+    grid.randomize(density)
     # Initialize the graphics
     screen, bg, clock, font, textpos, screen_size = graph_init(cells)
     # Draw initial grid
@@ -151,7 +146,7 @@ def main(args):
         clock.tick(framerate)
 
         # Compute and draw next generation
-        #grid = update_grid(grid, bg)
+        grid = grid.update_grid(bg)
         update_text(generation, textpos, bg, font, screen_size)
         screen.blit(bg, (0, 0))
         pygame.display.flip()
@@ -190,17 +185,6 @@ def update_text(gen, textpos, bg, font, screen_size):
     # Draw new text
     text = font.render("Generation " + str(gen), True, snow)
     bg.blit(text, textpos)
-
-
-
-# Helper function, prints neighbour counts
-def print_neighbour_counts(grid):
-    dims = grid.shape
-    print dims
-    for i in xrange(dims[0]):
-        print
-        for j in xrange(dims[1]):
-            print count_live_neighbours(grid, (i, j)),
 
 # Draw the grid
 def draw_grid(grid, bg, screen):
