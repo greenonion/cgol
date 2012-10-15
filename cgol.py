@@ -54,12 +54,68 @@ class Grid:
         # represents the cell
         self.cellmap[cell_idx] &= ~(0x80 >> (width & 0x07))
 
+    # Check if cell is set
+    def check_set(self, x, y):
+        # Determine array index position. 
+        # Every line contains width / 8 cells
+        cell_idx = y * self.width_in_bytes + x / 8
+        # Now the width modulo 8 operation will tell which bit
+        # represents the cell
+        if (self.cellmap[cell_idx] & 0x80 >> (x & 0x07)):
+            return True
+        else:
+            return False
+
     # Randomize grid to get unique starting generation
     def randomize(self):
         for i in xrange(self.width):
             for j in xrange(self.height):
                 if random.uniform(0, 1) < self.density:
                     self.set_cell(i, j)
+
+    # Get live neighbour cells
+    def count_live_neighbours(self, x, y):
+        # Wrap around the edges
+        prev_x = (x-1) % self.width
+        prev_y = (y-1) % self.height
+        next_x = (x+1) % self.width
+        next_y = (y+1) % self.height
+
+        neighs = [(prev_x, prev_y), (x, prev_y), 
+                  (next_x, prev_y), (prev_x, y), 
+                  (next_x, y), (prev_x, next_y), 
+                  (x, next_y), (next_x, next_y)]
+
+        total = 0
+        for (i, j) in neighs:
+            if self.check_set(i, j):
+                total += 1
+    
+        return total 
+
+    # Update grid by applying game of life rules
+    def update_grid(grid, bg):
+        dims = grid.shape
+        next_grid = np.zeros(dims)
+        for index, x in np.ndenumerate(grid):
+            neighbours = count_live_neighbours(grid, index)
+            # Any live cell 
+            if (x == 1):
+                # with fewer than two or more than three
+                # living neighours dies
+                if (neighbours < 2 or neighbours > 3):
+                    next_grid[index] = 0
+                    draw_cell(grid, bg, index, black)
+                else:
+                    next_grid[index] = 1
+            # Any dead cell        
+            else:        
+                # with three live neigbours becomes live
+                if (neighbours == 3):
+                    next_grid[index] = 1
+                    draw_cell(grid, bg, index, snow)
+
+        return next_grid
 
 
 # Main program
@@ -82,12 +138,10 @@ def main(args):
     # Initialize the grid
     #grid = grid_init(cells, density)
     grid = Grid(cells, density)
-    print grid.cellmap
     # Initialize the graphics
     screen, bg, clock, font, textpos, screen_size = graph_init(cells)
     # Draw initial grid
-    """
-    draw_grid(grid, bg)
+    draw_grid(grid, bg, screen)
 
     running = True
     generation = 0
@@ -97,7 +151,7 @@ def main(args):
         clock.tick(framerate)
 
         # Compute and draw next generation
-        grid = update_grid(grid, bg)
+        #grid = update_grid(grid, bg)
         update_text(generation, textpos, bg, font, screen_size)
         screen.blit(bg, (0, 0))
         pygame.display.flip()
@@ -107,7 +161,7 @@ def main(args):
                 running = False
 
         generation += 1
-    """
+    
 def graph_init(cells):
     # Initialize screen and clock
     width = cells[1] * cell_dim[1]
@@ -137,50 +191,7 @@ def update_text(gen, textpos, bg, font, screen_size):
     text = font.render("Generation " + str(gen), True, snow)
     bg.blit(text, textpos)
 
-# Update grid by applying game of life rules
-def update_grid(grid, bg):
-    dims = grid.shape
-    next_grid = np.zeros(dims)
-    for index, x in np.ndenumerate(grid):
-        neighbours = count_live_neighbours(grid, index)
-        # Any live cell 
-        if (x == 1):
-            # with fewer than two or more than three
-            # living neighours dies
-            if (neighbours < 2 or neighbours > 3):
-                next_grid[index] = 0
-                draw_cell(grid, bg, index, black)
-            else:
-                next_grid[index] = 1
-        # Any dead cell        
-        else:        
-            # with three live neigbours becomes live
-            if (neighbours == 3):
-                next_grid[index] = 1
-                draw_cell(grid, bg, index, snow)
 
-    return next_grid
-
-
-# Helper function, returns live neighbour cells
-def count_live_neighbours(grid, cell):
-    dims = grid.shape
-    x = cell[0]
-    y = cell[1]
-    neighs = [(x-1, y-1), (x, y-1), (x+1, y-1),
-              (x-1, y), (x+1, y),
-              (x-1, y+1), (x, y+1), (x+1, y+1)]
-
-    total = 0
-    for (x, y) in neighs:
-        if (x < 0): x = dims[0] - 1
-        if (y < 0): y = dims[1] - 1
-        if (x == dims[0]): x = 0
-        if (y == dims[1]): y = 0
-        if grid[(x, y)] == 1:
-                total += 1
-    
-    return total 
 
 # Helper function, prints neighbour counts
 def print_neighbour_counts(grid):
@@ -192,14 +203,16 @@ def print_neighbour_counts(grid):
             print count_live_neighbours(grid, (i, j)),
 
 # Draw the grid
-def draw_grid(grid, bg):
-    for index, x in np.ndenumerate(grid):
-        if x == 1:
-            pygame.draw.rect(bg, snow, (index[1]*cell_dim[1],
-                 index[0]*cell_dim[0], cell_dim[0], cell_dim[1]))
-        elif x == 0:
-            pygame.draw.rect(bg, black, (index[1]*cell_dim[1],
-                 index[0]*cell_dim[0], cell_dim[0], cell_dim[1]))
+def draw_grid(grid, bg, screen):
+    #for index, x in np.ndenumerate(grid):
+    for i in xrange(grid.width):
+        for j in xrange(grid.height):
+            if grid.check_set(i, j):
+                pygame.draw.rect(bg, snow, (j*cell_dim[1],
+                    i*cell_dim[0], cell_dim[0], cell_dim[1]))
+
+    screen.blit(bg, (0, 0))
+    pygame.display.flip()
 
 # Draw a single cell            
 def draw_cell(grid, bg, pos, colour):
