@@ -1,6 +1,6 @@
 This is just a simple attempt to implement Conway's Game of Life in Python.
 
-The tables are stored using numpy and for the graphics pygame is needed.
+For the graphics pygame is needed.
 
 To run the program use:
 
@@ -8,6 +8,10 @@ $python cgol.py cells_x cells_y density
 
 where cells_x and cells_y are the number of cells in the x and y axis respectively and density is the initial probability of a cell being alive.
 
+Currently in the process of implementing the various optimizations proposed in Michael Abrash's Graphics Programming Black Book.
+
 Some tips on the usage of pygame were found in http://www.daniweb.com/software-development/python/code/217028/the-game-of-life 
 
-**Version 1.10: Updated code so that cells are redrawn only if needed
+** LOG **
+** In the process of converting the program to use bits to store the cells.
+** Version 1.10: Updated code so that cells are redrawn only if needed

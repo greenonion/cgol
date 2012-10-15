@@ -3,10 +3,12 @@
 import sys
 import pygame
 import random
-import numpy as np
+import array
 
 #** GLOBAL SETTINGS **
-version = "1.10"
+# Trying to use bit representation
+# using python array module
+version = "2.00"
 bottom_border = 20
 # Framerate of the Game
 framerate = 18.2
@@ -16,13 +18,61 @@ cell_dim = (5, 5)
 snow = (255, 250, 250)
 black = (0, 0, 0)
 
+class Grid:
+    """The class for the cellgrid"""
+    
+    # Initialize grid
+    def __init__(self, cells, density):
+        # Store width and height dimensions
+        self.width = cells[0]
+        self.height = cells[1]
+        self.density = density
+        # Each byte stores 8 bits, so every cell will represent 8 squares
+        self.width_in_bytes = cells[0]/8
+        # Total length of the array
+        self.length_in_bytes = self.width_in_bytes * self.height
+        # Initialize array with zeroes
+        self.cellmap = array.array('B', [0]*self.length_in_bytes) 
+        # Randomize array
+        self.randomize()
+        
+    # Set cell value to 1
+    def set_cell(self, width, height):
+        # Determine array index position. 
+        # Every line contains width / 8 cells
+        cell_idx = height * self.width_in_bytes + width / 8
+        # Now the width modulo 8 operation will tell which bit
+        # represents the cell
+        self.cellmap[cell_idx] |= 0x80 >> (width & 0x07)
+
+    # Set cell value to 0
+    def unset_cell(self, width, height):
+        # Determine array index position. 
+        # Every line contains width / 8 cells
+        cell_idx = height * self.width_in_bytes + width / 8
+        # Now the width modulo 8 operation will tell which bit
+        # represents the cell
+        self.cellmap[cell_idx] &= ~(0x80 >> (width & 0x07))
+
+    # Randomize grid to get unique starting generation
+    def randomize(self):
+        for i in xrange(self.width):
+            for j in xrange(self.height):
+                if random.uniform(0, 1) < self.density:
+                    self.set_cell(i, j)
+
+
 # Main program
 def main(args):
     if len(args) != 4:
         print "USAGE: cgol.py cells_x cells_y density"
         exit(0)
-    if (float(args[3]) > 1 or float(args[3]) < 0):
-        print "ERROR: Density must be between 0 and 1"
+    elif (int(args[1]) % 8 or int(args[2]) % 8):
+        # TODO: silently round to closer multiple of 8
+        print "INVALID ARGUMENT: cell number must be multiple of 8"
+        exit(0)
+    elif (float(args[3]) > 1 or float(args[3]) < 0):
+        print "INVALID ARGUMENT: Density must be between 0 and 1"
         exit(0)
     else:
         cells = (int(args[2]), int(args[1]))
@@ -30,10 +80,13 @@ def main(args):
         
 
     # Initialize the grid
-    grid = init(cells, density)
+    #grid = grid_init(cells, density)
+    grid = Grid(cells, density)
+    print grid.cellmap
     # Initialize the graphics
     screen, bg, clock, font, textpos, screen_size = graph_init(cells)
     # Draw initial grid
+    """
     draw_grid(grid, bg)
 
     running = True
@@ -54,8 +107,7 @@ def main(args):
                 running = False
 
         generation += 1
-
-
+    """
 def graph_init(cells):
     # Initialize screen and clock
     width = cells[1] * cell_dim[1]
@@ -84,17 +136,6 @@ def update_text(gen, textpos, bg, font, screen_size):
     # Draw new text
     text = font.render("Generation " + str(gen), True, snow)
     bg.blit(text, textpos)
-
-# Initialize grid
-def init(cells, density):
-    grid = np.random.sample(cells)
-    for index, x in np.ndenumerate(grid):
-        if x < density:
-            grid[index] = 1
-        else:
-            grid[index] = 0
-
-    return grid
 
 # Update grid by applying game of life rules
 def update_grid(grid, bg):
